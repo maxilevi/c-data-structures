@@ -1,0 +1,27 @@
+% this is hello.tex
+\documentclass{article}
+\begin{document}
+\begin{verbatim}
+bool posicion_valida(size_t posicion, vector_t* vector) {
+    /* pos es un size_t asi que nunca va a poder ser menor a 0 */
+    return posicion < vector->tam;
+}
+
+void vector_destruir(vector_t* vector) {
+    free(vector->datos);
+    free(vector);
+}
+
+bool vector_obtener(vector_t* vector, size_t pos, int* valor) {
+    if(!posicion_valida(pos, vector)) return false;
+    *(valor) = *(vector->datos + pos);
+    return true;
+}
+
+bool vector_guardar(vector_t* vector, size_t pos, int valor) {
+    if(posicion_valida(pos, vector)) return false;
+    *(vector->datos + pos) = valor;
+    return true;
+}
+\end{verbatim}
+\end{document}
