@@ -72,10 +72,9 @@ void* pila_ver_tope(const pila_t *pila) {
 
 void* pila_desapilar(pila_t *pila) {
 	if(pila_esta_vacia(pila)) return NULL;
-
 	if(hay_que_achicar_pila(pila)) {
-		bool resultado = redimensionar(pila, pila->capacidad / 2);
-		if (!resultado) return NULL;
+		/* Como el "achicar" la pila es una optimizacion interna, si la redimension falla podemos ignorarlo y devolver el valor tranquilamente */
+		redimensionar(pila, pila->capacidad / 2);
 	}
 	return pila->datos[(pila->cantidad--) - 1];
 }
