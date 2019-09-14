@@ -14,6 +14,8 @@ struct cola {
 nodo_t* crear_nodo() {
 	nodo_t* nodo = malloc(sizeof(nodo_t));
 	if(nodo == NULL) return NULL;
+	nodo->valor = NULL;
+	nodo->proximo = NULL;
 	return nodo;
 }
 
@@ -34,19 +36,20 @@ cola_t* cola_crear(void) {
 }
 
 void cola_destruir(cola_t *cola, void destruir_dato(void*)) {
-	nodo_t* actual = cola->fin;
+	nodo_t* actual = cola->inicio;
 	while (actual != NULL) {
 		if(destruir_dato != NULL)
 			destruir_dato(actual->valor);
-		actual = actual->proximo;
-		destruir_nodo(actual);
+
+		nodo_t* previo = actual;
+		actual = previo->proximo;
+		destruir_nodo(previo);
 	}
 	free(cola);
 }
 
 bool cola_esta_vacia(const cola_t *cola) {
-	/* Realmente con fijarse si cola->inicio sea NULL bastaria pero queda mas prolijo asi */
-	return cola->inicio == NULL && cola->fin == NULL;
+	return cola->inicio == NULL;
 }
 
 bool cola_encolar(cola_t *cola, void* valor) {
@@ -59,16 +62,18 @@ bool cola_encolar(cola_t *cola, void* valor) {
 	if(cola->fin != NULL)
 		cola->fin->proximo = nuevo_nodo;
 	cola->fin = nuevo_nodo;
+	if (cola->inicio == NULL)
+		cola->inicio = nuevo_nodo;
 	return true;
 }
 
 void* cola_ver_primero(const cola_t *cola) {
-	if (!cola_esta_vacia(cola)) return NULL;
+	if (cola_esta_vacia(cola)) return NULL;
 	return cola->inicio->valor;
 }
 
 void* cola_desencolar(cola_t *cola) {
-	if (!cola_esta_vacia(cola)) return NULL;
+	if (cola_esta_vacia(cola)) return NULL;
 
 	nodo_t* primero = cola->inicio;
 	void* valor = primero->valor;

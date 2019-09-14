@@ -2,6 +2,7 @@
 #include "testing.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 /* ******************************************************************
@@ -33,7 +34,7 @@ void probar_cola_ver_primero() {
 
 void destruir_auxiliar(void* valor) {
 	/* Marco que la funcion auxiliar de haya llamado sobre el elemento */
-	*((int*)valor) = -1;
+	(*((int*)valor)) = -1;
 }
 
 void probar_destruir_funcion() {
@@ -93,7 +94,7 @@ void probar_volumen() {
 	for(i = 0; i < tam; ++i) {
 		void* output = cola_desencolar(cola);
 		resultado &= (output != NULL);
-		resultado_FIFO &= ((*((int*)output)) == datos[(tam - i - 1) % datos_tam]);
+		resultado_FIFO &= ((*((int*)output)) == datos[i % datos_tam]);
 	}
 	print_test("Cola con muchos respeta el invariante FIFO", resultado_FIFO);
 	print_test("No falla al encolar y desencolar muchos (volumen)", resultado);
