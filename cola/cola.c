@@ -24,17 +24,20 @@ void destruir_nodo(nodo_t* nodo) {
 }
 
 void apender_nodo(cola_t* cola, nodo_t* nuevo_nodo) {
+	/* Agarro el ultimo nodo y hago que apunte a este nuevo "ultimo" */
 	nodo_t* ultimo = cola->fin;
 	if(ultimo != NULL)
 		ultimo->proximo = nuevo_nodo;
 	cola->fin = nuevo_nodo;
 
+	/* Si se añadio un nodo nuevo y el inicio no existe entonces quiere decir que es el primero. */
 	nodo_t* primero = cola->inicio;
 	if (primero == NULL)
 		cola->inicio = nuevo_nodo;
 }
 
 void remover_nodo(cola_t* cola, nodo_t* primero) {
+	/* Muevo el puntero del inicio al siguiente nodo y destruyo el viejo. Si inicio se convierte en NULL entonces ya no hay mas nodos.*/
 	cola->inicio = primero->proximo;
 	if(cola->inicio == NULL)
 		cola->fin = NULL;
