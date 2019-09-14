@@ -23,6 +23,24 @@ void destruir_nodo(nodo_t* nodo) {
 	free(nodo);
 }
 
+void apender_nodo(cola_t* cola, nodo_t* nuevo_nodo) {
+	nodo_t* ultimo = cola->fin;
+	if(ultimo != NULL)
+		ultimo->proximo = nuevo_nodo;
+	cola->fin = nuevo_nodo;
+
+	nodo_t* primero = cola->inicio;
+	if (primero == NULL)
+		cola->inicio = nuevo_nodo;
+}
+
+void remover_nodo(cola_t* cola, nodo_t* primero) {
+	cola->inicio = primero->proximo;
+	if(cola->inicio == NULL)
+		cola->fin = NULL;
+	destruir_nodo(primero);
+}
+
 /* *****************************************************************
  *                    PRIMITIVAS DE LA COLA
  * *****************************************************************/
@@ -59,11 +77,7 @@ bool cola_encolar(cola_t *cola, void* valor) {
 	nuevo_nodo->valor = valor;
 	nuevo_nodo->proximo = NULL;
 
-	if(cola->fin != NULL)
-		cola->fin->proximo = nuevo_nodo;
-	cola->fin = nuevo_nodo;
-	if (cola->inicio == NULL)
-		cola->inicio = nuevo_nodo;
+	apender_nodo(cola, nuevo_nodo);
 	return true;
 }
 
@@ -78,11 +92,6 @@ void* cola_desencolar(cola_t *cola) {
 	nodo_t* primero = cola->inicio;
 	void* valor = primero->valor;
 
-	cola->inicio = primero->proximo;
-	if(cola->inicio == NULL) {
-		cola->fin = NULL;
-	}
-	
-	destruir_nodo(primero);
+	remover_nodo(cola, primero);
 	return valor;
 }
