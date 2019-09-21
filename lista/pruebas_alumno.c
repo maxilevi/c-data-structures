@@ -2,6 +2,7 @@
 #include "testing.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 /* ******************************************************************
@@ -169,20 +170,27 @@ void probar_volumen() {
 	size_t i = 0;
 	bool resultado = true;
 	bool resultado_orden = true;
+	bool resultado_longitud = true;
 	size_t datos_tam = 10;
 	int datos[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 	for(i = 0; i < tam; ++i) {
+		resultado_longitud &= lista_largo(lista) == i;
 		resultado &= lista_insertar_ultimo(lista, (void*) &datos[i % datos_tam]);
+		resultado_longitud &= lista_largo(lista) == (i + 1);
 	}
 	print_test("No falla al enlistar 10000", resultado);
+	print_test("Longitud de la lista se actualiza correctamente", resultado_longitud);
 	print_test("Longitud de la lista es el mismo que la cantidad de elementos", lista_largo(lista) == tam);
 	for(i = 0; i < tam; ++i) {
+		resultado_longitud &= lista_largo(lista) == tam-i;
 		void* output = lista_borrar_primero(lista);
 		resultado &= (output != NULL);
 		resultado_orden &= ((*((int*)output)) == datos[i % datos_tam]);
+		resultado_longitud &= lista_largo(lista) == tam-i-1;
 	}
 	print_test("Lista con muchos respeta el invariante orden", resultado_orden);
 	print_test("No falla al enlistar y desenlistar muchos (volumen)", resultado);
+	print_test("Longitud de la lista se actualiza correctamente al sacar elementos", resultado_longitud);
 
 	lista_destruir(lista, NULL);
 }
@@ -252,22 +260,26 @@ void probar_iter_inicio() {
 void probar_iter_final() {
 	lista_t* lista = lista_crear();
 
-	char* turing = "turing";
+	char* planck = "planck";
 	char* mozart = "mozart";
-	lista_insertar_primero(lista, "planck");
+	lista_insertar_primero(lista, planck);
 	lista_insertar_primero(lista, mozart);
-	lista_insertar_primero(lista, turing);
+	lista_insertar_primero(lista, "turing");
 
 	lista_iter_t* iter = lista_iter_crear(lista);
 
-	while(!lista_iter_al_final(iter))
+	int i = 0;
+	while (i < 2)
+	{
 		lista_iter_avanzar(iter);
+		i++;
+	}
 
-	print_test("Se borro el ultimo elemento correctamente usando el iterador externo", ((char*)lista_iter_borrar(iter)) == turing);
+	print_test("Se borro el ultimo elemento correctamente usando el iterador externo", ((char*)lista_iter_borrar(iter)) == planck);
 	print_test("Remover el último elemento con el iterador cambia el último de la lista", lista_ver_ultimo(lista) == mozart);
 
 	char* van_gogh = "van gogh";
-	lista_iter_insertar(iter, &van_gogh);
+	lista_iter_insertar(iter, van_gogh);
 	print_test("Insertar un elemento en la posición final es equivalente a insertar al final", ((char*)lista_ver_ultimo(lista)) == van_gogh);
 
 	lista_iter_destruir(iter);
@@ -278,20 +290,21 @@ void probar_iter_insertar_medio() {
 	lista_t* lista = lista_crear();
 	int input[] = {1,2,3,4,5,16};
 
-	lista_insertar_primero(lista, &input[0]);
-	lista_insertar_primero(lista, &input[1]);
-	lista_insertar_primero(lista, &input[2]);
-	lista_insertar_primero(lista, &input[3]);
-	lista_insertar_primero(lista, &input[4]);
+	lista_insertar_ultimo(lista, &input[0]);
+	lista_insertar_ultimo(lista, &input[1]);
+	lista_insertar_ultimo(lista, &input[2]);
+	lista_insertar_ultimo(lista, &input[3]);
+	lista_insertar_ultimo(lista, &input[4]);
 
 	lista_iter_t* iter = lista_iter_crear(lista);
 
 	int i = 0;
-	while(i < 3)
+	while(i < 2)
 	{
 		lista_iter_avanzar(iter);
 		i++;
 	}
+	print_test("El iterador de la lista avanza y se ve correctamente", 3 == *(int*)lista_iter_ver_actual(iter));
 	lista_iter_insertar(iter, &input[5]);
 
 	/* Verificar que el orden sea correcto usando el iterador interno */
@@ -308,20 +321,21 @@ void probar_iter_remover_medio() {
 	lista_t* lista = lista_crear();
 	int input[] = {1,2,3,4,5};
 
-	lista_insertar_primero(lista, &input[0]);
-	lista_insertar_primero(lista, &input[1]);
-	lista_insertar_primero(lista, &input[2]);
-	lista_insertar_primero(lista, &input[3]);
-	lista_insertar_primero(lista, &input[4]);
+	lista_insertar_ultimo(lista, &input[0]);
+	lista_insertar_ultimo(lista, &input[1]);
+	lista_insertar_ultimo(lista, &input[2]);
+	lista_insertar_ultimo(lista, &input[3]);
+	lista_insertar_ultimo(lista, &input[4]);
 
 	lista_iter_t* iter = lista_iter_crear(lista);
 
 	int i = 0;
-	while(i < 3)
+	while(i < 2)
 	{
 		lista_iter_avanzar(iter);
 		i++;
 	}
+	print_test("El iterador de la lista avanza y se ve correctamente", 3 == *(int*)lista_iter_ver_actual(iter));
 	lista_iter_borrar(iter);
 
 	/* Verificar que el orden sea correcto usando el iterador interno */
@@ -334,12 +348,65 @@ void probar_iter_remover_medio() {
 	lista_destruir(lista, NULL);
 }
 
+void probar_iter_recorre_todos() {
+	lista_t* lista = lista_crear();
+	int input[] = { 1,2,3,4,5 };
+
+	lista_insertar_ultimo(lista, &input[0]);
+	lista_insertar_ultimo(lista, &input[1]);
+	lista_insertar_ultimo(lista, &input[2]);
+	lista_insertar_ultimo(lista, &input[3]);
+	lista_insertar_ultimo(lista, &input[4]);
+
+	bool todo_ok = true;
+	int i = 0;
+	lista_iter_t* iter = lista_iter_crear(lista);
+	while (!lista_iter_al_final(iter))
+	{
+		todo_ok &= (*(int*)lista_iter_ver_actual(iter)) == input[i];
+		lista_iter_avanzar(iter);
+		i++;
+	}
+	print_test("El iterador de la lista recorre todos correctamente", todo_ok);
+
+	lista_iter_destruir(iter);
+	lista_destruir(lista, NULL);
+}
+
+
+void prueba_iterador_insertar_y_borrar_sin_orden() {
+	/* Este test es mas que nada para generar algun error de inconsistencia */
+	lista_t* lista = lista_crear();
+	int input[] = { 1,2,3,4,5 };
+
+	bool todo_ok = true;
+	int i = 0;
+	lista_iter_t* iter = lista_iter_crear(lista);
+	todo_ok &= lista_iter_insertar(iter, &input[i++]);
+	todo_ok &= lista_iter_avanzar(iter);
+	todo_ok &= lista_iter_insertar(iter, &input[i]);
+	todo_ok &= (*(int*)lista_iter_borrar(iter)) == 2;
+	todo_ok &= lista_iter_insertar(iter, &input[i++]);
+	todo_ok &= lista_iter_avanzar(iter);
+	todo_ok &= lista_iter_insertar(iter, &input[i++]);
+	todo_ok &= (*(int*)lista_iter_borrar(iter)) == 3;
+	todo_ok &= lista_iter_borrar(iter) == NULL;
+	todo_ok &= lista_iter_borrar(iter) == NULL;
+
+	print_test("Se completaron todas las operaciones correctamente", todo_ok);
+
+	lista_iter_destruir(iter);
+	lista_destruir(lista, NULL);
+}
+
 void pruebas_iterador() {
 	probar_iter_crear();
 	probar_iter_inicio();
 	probar_iter_final();
 	probar_iter_insertar_medio();
 	probar_iter_remover_medio();
+	probar_iter_recorre_todos();
+	prueba_iterador_insertar_y_borrar_sin_orden();
 }
 
 /* ******************************************************************

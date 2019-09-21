@@ -1,4 +1,5 @@
 #include "lista.h"
+#include <stdlib.h>
 
 typedef struct nodo {
 	struct nodo* proximo;
@@ -49,6 +50,13 @@ void* borrar_nodo(lista_t* lista, nodo_t* nodo) {
 	free(nodo);
 	lista->largo--;
 	return dato;
+}
+
+void* borrar_fin(lista_t* lista, nodo_t* anterior) {
+	nodo_t* actual = lista->fin;
+	lista->fin = anterior;
+	anterior->proximo = actual->proximo;
+	return borrar_nodo(lista, actual);
 }
 
 
@@ -146,12 +154,14 @@ lista_iter_t *lista_iter_crear(lista_t *lista) {
 }
 
 bool lista_iter_avanzar(lista_iter_t *iter) {
+	if (lista_iter_al_final(iter)) return false;
 	iter->anterior = iter->actual;
 	iter->actual = iter->actual->proximo;
 	return true;
 }
 
 void* lista_iter_ver_actual(const lista_iter_t *iter) {
+	if (lista_iter_al_final(iter)) return NULL;
 	return iter->actual->valor;
 }
 
@@ -165,35 +175,41 @@ void lista_iter_destruir(lista_iter_t *iter) {
 }
 
 bool lista_iter_insertar(lista_iter_t *iter, void *dato) {
-	/*nodo_t* nuevo = crear_nodo(dato);
-	if(!nuevo) return false;
-	
-	 Casos borde, si el iterador esta al inicio o al final 
+	/* Casos borde, si el iterador esta al inicio o al final */
 	bool resultado = true;
-	if(iter->anterior == NULL) {
-		resultado &= lista_insertar_primero(iter->lista);
-		if(resultado) iter->actual = nuevo;
+	if(iter->actual == iter->lista->inicio) {
+		resultado &= lista_insertar_primero(iter->lista, dato);
+		if(resultado) iter->actual = iter->lista->inicio;
 	}
-	else if(iter->actual == NULL) {
-		resultado &= lista_insertar_ultimo(iter->lista);
-		if(resultado) iter->actual = nuevo;
+	else if(iter->anterior == iter->lista->fin) {
+		resultado &= lista_insertar_ultimo(iter->lista, dato);
+		if(resultado) iter->actual = iter->lista->fin;
 	}
 	else {
-		resultado &= insertar_despues(lista, iter->anterior, nuevo);
+		nodo_t* nuevo = crear_nodo(dato);
+		resultado &= nuevo != NULL;
+		if(resultado) {
+			insertar_despues(iter->lista, iter->anterior, nuevo);
+			iter->actual = nuevo;
+		}
 	}
-	return resultado;*/
-	return false;
+	return resultado;
 }
 
 void* lista_iter_borrar(lista_iter_t *iter) {
-	return NULL;
-/*	nodo_t* nodo = iter->actual;
-	if(iter->anterior == NULL)
-		lista_borrar_primero(iter->lista);
-	else if (iter->anterior == == iter->lista->fin)
-		borrar_ultimo();
-	else
-
-
-	return destruir_nodo(nodo);*/
+	if (lista_iter_al_final(iter)) return NULL;
+	if(iter->actual == iter->lista->inicio) {
+		void* dato = lista_borrar_primero(iter->lista);
+		iter->actual = iter->lista->inicio;
+		return dato;
+	}
+	else if (iter->actual == iter->lista->fin) {
+		void* dato = borrar_fin(iter->lista, iter->anterior);
+		iter->actual = NULL;
+		return dato;
+	}
+	nodo_t* nodo = iter->actual;
+	iter->anterior->proximo = nodo->proximo;
+	iter->actual = nodo->proximo;
+	return borrar_nodo(iter->lista, nodo);
 }
