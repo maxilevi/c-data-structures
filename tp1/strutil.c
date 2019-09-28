@@ -48,7 +48,7 @@ size_t calcular_largo_union(char** strv) {
 	size_t largo = 0;
 	for (int i = 0; strv[i] != NULL; ++i) {
 		/* Sumamos +1 por el espacio del caracter que los va a unir */
-		largo += strlen(strv[i]) + 1;
+		largo += strlen(strv[i]) + (strv[i+1] != NULL ? 1 : 0);
 	}
 	return largo;
 }
@@ -59,13 +59,22 @@ char* join(char** strv, char sep) {
 	char* nuevo = malloc(sizeof(char) * largo);
 	if (!nuevo) return NULL;
 
-	char separador[] = { sep, '\0' };
-	memset(nuevo, '\0', largo);
-	for (int i = 0; strv[i] != NULL; ++i) {
-		if(i != 0)
-			strcat(nuevo, separador);
-		strcat(nuevo, strv[i]);
+	int k = 0;
+	int j = 0;
+	/* Iteramos por todo el string resultante y vamos añadiendo los caracteres uno a uno asi hacemos que el join sea O(N) */
+	for (int i = 0; i < largo-1; ++i) {
+		char siguiente = strv[j][k];
+		if (siguiente == '\0') {
+			j++;
+			k = 0;
+			nuevo[i] = sep;
+		}
+		else {
+			nuevo[i] = siguiente;
+			k++;
+		}
 	}
+	nuevo[largo - 1] = '\0';
 	return nuevo;
 }
 
