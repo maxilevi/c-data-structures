@@ -35,9 +35,9 @@ void probar_split() {
 
 void probar_join() {
 	char* input[] = { "PRINCIPIO", "DE", "INDUCCION", "COMPLETO", NULL};
-	char* expected = "PRINCIPIO DE INDUCCION COMPLETO";
 
-	assert(expected, join(input, ' '), "join", free);
+	assert("PRINCIPIO DE INDUCCION COMPLETO", join(input, ' '), "join", free);
+	assert("PRINCIPIODEINDUCCIONCOMPLETO", join(input, '\0'), "join vacio", free);
 }
 
 int main(void) {

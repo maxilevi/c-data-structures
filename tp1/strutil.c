@@ -44,18 +44,27 @@ char** split(const char* str, char sep) {
 	return arreglo;
 }
 
-size_t calcular_largo_union(char** strv) {
+size_t calcular_largo_union(char** strv, size_t tam, char sep) {
 	size_t largo = 0;
-	for (int i = 0; strv[i] != NULL; ++i) {
+	for (int i = 0; i < tam; ++i) {
 		/* Sumamos +1 por el espacio del caracter que los va a unir */
-		largo += strlen(strv[i]) + (strv[i+1] != NULL ? 1 : 0);
+		int agregar_espacio = i+1 < tam && sep != '\0';
+		/* Si el caracter es el nulo o el string es el ultimo del array entonces no necesitamos espacio extra */
+		largo += strlen(strv[i]) + (agregar_espacio ? 1 : 0);
 	}
 	return largo;
 }
 
+size_t calcular_cant_strings(char** strv) {
+	size_t count = 0;
+	for (int i = 0; strv[i] != NULL; ++i) count++;
+	return count;
+}
+
 char* join(char** strv, char sep) {
 	/* Sumamos 1 al final por el \0 */
-	size_t largo = calcular_largo_union(strv) + 1;
+	size_t cant_strings = calcular_cant_strings(strv);
+	size_t largo = calcular_largo_union(strv, cant_strings, sep) + 1;
 	char* nuevo = malloc(sizeof(char) * largo);
 	if (!nuevo) return NULL;
 
@@ -67,7 +76,16 @@ char* join(char** strv, char sep) {
 		if (siguiente == '\0') {
 			j++;
 			k = 0;
-			nuevo[i] = sep;
+			/* 
+			 * Si el separador es el caracter nulo entonces no hay espacio entre los strings y directamente añadimos el siguiente.
+			 * Pero tenemos que checkear de no estar en el ultimo string asi no hacemos un out of bounds 
+			 */
+			if (j < cant_strings && sep == '\0') {
+				nuevo[i] = strv[j][k++];
+			}
+			else {
+				nuevo[i] = sep;
+			}
 		}
 		else {
 			nuevo[i] = siguiente;
