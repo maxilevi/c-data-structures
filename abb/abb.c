@@ -1,7 +1,9 @@
 #define _POSIX_C_SOURCE 200809L /* Para el strdup */
 
 #include "abb.h"
+#include "tdas/pila.h"
 #include <string.h>
+#include <stdio.h>
 
 /* Definiciones */
 
@@ -29,6 +31,8 @@ abb_nodo_t* crear_nodo(const char* clave, void* dato) {
     if(!nodo) return NULL;
     nodo->key = strdup(clave);
     nodo->value = dato;
+    nodo->left = NULL;
+    nodo->right = NULL;
     return nodo;
 }
 
@@ -123,11 +127,18 @@ void abb_destruir(abb_t *arbol) {
 /* Iterador */
 
 struct abb_iter {
-    char tu_hermana;
+    pila_t* pila;
 };
 
 abb_iter_t *abb_iter_in_crear(const abb_t *arbol) {
-    return NULL;
+    abb_iter_t* iter = malloc(sizeof(abb_iter_t));
+    if(!iter) return NULL;
+    iter->pila = pila_crear();
+    if(!iter->pila) {
+        free(iter);
+        return NULL;
+    }
+    return iter;
 }
 
 bool abb_iter_in_avanzar(abb_iter_t *iter) {
@@ -135,13 +146,14 @@ bool abb_iter_in_avanzar(abb_iter_t *iter) {
 }
 
 const char *abb_iter_in_ver_actual(const abb_iter_t *iter) {
-    return NULL;
+    return pila_ver_tope(iter->pila);
 }
 
 bool abb_iter_in_al_final(const abb_iter_t *iter) {
-    return false;
+    return pila_esta_vacia(iter->pila);
 }
 
 void abb_iter_in_destruir(abb_iter_t* iter) {
-    return;
+    pila_destruir(iter->pila);
+    free(iter);
 }
