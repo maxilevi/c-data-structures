@@ -1,9 +1,9 @@
 #define _POSIX_C_SOURCE 200809L /* Para el strdup */
 
 #include "abb.h"
-#include "tdas/pila.h"
+#include "pila.h"
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 /* Definiciones */
 
@@ -205,6 +205,24 @@ size_t abb_cantidad(abb_t *arbol) {
 void abb_destruir(abb_t *arbol) {
     iterar_post_order(arbol, arbol->root, destruir_nodo);
     free(arbol);
+}
+
+/* Iterador interno */
+
+/* Itera el inorder del arbol recursivamente */
+void abb_in_order_aux(abb_nodo_t *root, bool visitar(const char *, void *, void *), void *extra, bool* seguir_iterando) {
+    if(!root) return;
+    abb_in_order_aux(root->left, visitar, extra, seguir_iterando);
+    if(*seguir_iterando) {
+        if(!visitar(root->key, root->value, extra))
+            *seguir_iterando = false;
+    }
+    abb_in_order_aux(root->right, visitar, extra, seguir_iterando);
+}
+
+void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void *extra) {
+	bool seguir_iterando = true;
+    abb_in_order_aux(arbol->root, visitar, extra, &seguir_iterando);
 }
 
 /* Iterador */

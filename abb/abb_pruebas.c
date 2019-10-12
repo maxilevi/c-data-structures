@@ -343,6 +343,26 @@ static void prueba_abb_iterar()
     abb_destruir(abb);
 }
 
+typedef struct array_index {
+    int* expected;
+    int i;
+    bool valido;
+} array_index_t;
+
+bool visitar_aux(const char* clave, void* valor, void* extra) {
+    array_index_t* array_index = (array_index_t*) extra;
+    array_index->valido &= array_index->expected[array_index->i] == *((int*)valor);
+    array_index->i++;
+    return true;
+}
+
+bool visitar_aux_cortando(const char* clave, void* valor, void* extra) {
+    array_index_t* array_index = (array_index_t*) extra;
+    array_index->valido &= array_index->expected[array_index->i] == *((int*)valor);
+    array_index->i++;
+    return array_index->i < 5;
+}
+
 static void prueba_abb_iterar_inorder_es_ordenado() {
 	abb_t* abb = abb_crear(strcmp, NULL);
 
@@ -369,6 +389,20 @@ static void prueba_abb_iterar_inorder_es_ordenado() {
 	for (int i = 0; i < tam; ++i) {
 		abb_guardar(abb, pairs[i].clave, &pairs[i].dato);
 	}
+
+    array_index_t extra = {expected, 0, true};
+
+    abb_in_order(abb, visitar_aux, &extra);
+
+	print_test("Prueba abb iterador interno itero los elementos en el orden correcto", extra.valido);
+	print_test("Prueba abb iterador interno itero todo", extra.i == tam);
+
+    array_index_t extra_cortando = {expected, 0, true};
+
+    abb_in_order(abb, visitar_aux_cortando, &extra_cortando);
+
+	print_test("Prueba abb iterador interno itero los elementos en el orden correcto", extra_cortando.valido);
+	print_test("Prueba abb iterador interno corto correctamente", extra_cortando.i == 5);
 
 	abb_iter_t* iter = abb_iter_in_crear(abb);
 	bool todo_ok = true;
