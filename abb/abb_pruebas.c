@@ -1,18 +1,26 @@
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 #include "testing.h"
 #include "abb.h"
 
 void prueba_abb_claves() {
-    const size_t cant = 6;
-    char* claves[] = {"1","2","3","4","5","6","7"};
+    const int cant = 7;
+    char* claves[] = {"3","1","8","7","10","4","17"};
+	int valores[] =  {432,234,211,234,876,237,908};
     abb_t* abb = abb_crear(strcmp, NULL);
     bool todo_ok = true;
     for(int i = 0; i < cant; ++i) {
-        abb_guardar(abb, claves[i], NULL);
+        abb_guardar(abb, claves[i], &valores[i]);
         todo_ok &= abb_pertenece(abb, claves[i]);
     }
     print_test("Prueba claves añadidas al abb pertenecen", todo_ok);
+	for (int i = cant-1; i > -1; --i) {
+		todo_ok &= abb_borrar(abb, claves[i]) == &valores[i];
+		todo_ok &= !abb_pertenece(abb, claves[i]);
+	}
+	print_test("Prueba claves borradas correctamente del abb", todo_ok);
     abb_destruir(abb);
 }
 
@@ -79,8 +87,8 @@ static void prueba_abb_reemplazar()
 {
     abb_t* abb = abb_crear(strcmp, NULL);
 
-    char *clave1 = "perro", *valor1a = "guau", *valor1b = "warf";
-    char *clave2 = "gato", *valor2a = "miau", *valor2b = "meaow";
+    char *clave1 = "1", *valor1a = "guau", *valor1b = "warf";
+    char *clave2 = "2", *valor2a = "miau", *valor2b = "meaow";
 
     /* Inserta 2 valores y luego los reemplaza */
     print_test("Prueba abb insertar clave1", abb_guardar(abb, clave1, valor1a));
@@ -207,64 +215,72 @@ static void prueba_abb_valor_null()
     abb_destruir(abb);
 }
 
-static void prueba_abb_volumen(size_t largo, bool debug)
+/* 
+ * Lo saque de aca https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle 
+ * Use void* para "evitar la perdida de generalidad" como dicen los matematicos
+ */
+static void shuffle(void** arr, int n) {
+	void* aux;
+	int j;
+	for(int i = n-1; i > 0; --i) {
+		j = rand() % (i + 1);
+		aux = arr[i];
+		arr[i] = arr[j];
+		arr[j] = aux;
+	}
+}
+
+static void prueba_abb_volumen()
 {
+	/* Le ponemos una seed al SRNG para que el test case sea deterministico y reproducible */
+	srand((unsigned int)1);
     abb_t* abb = abb_crear(strcmp, NULL);
+	const int tam = 5000;
+	char* claves[5000];
+	int valores[5000];
 
-    const size_t largo_clave = 10;
-    char (*claves)[largo_clave] = malloc(largo * largo_clave);
-
-    unsigned* valores[largo];
+	for (int i = 0; i < tam; ++i) {
+		claves[i] = malloc(sizeof(char) * 10);
+		valores[i] = i;
+		sprintf(claves[i], "%08d", i);
+	}
+	shuffle((void**)claves, tam);
 
     /* Inserta 'largo' parejas en el abb */
     bool ok = true;
-    for (unsigned i = 0; i < largo; i++) {
-        valores[i] = malloc(sizeof(int));
-        sprintf(claves[i], "%08d", i);
-        *valores[i] = i;
-        ok = abb_guardar(abb, claves[i], valores[i]);
+    for (int i = 0; i < tam; i++) {
+        ok = abb_guardar(abb, claves[i], &valores[i]);
         if (!ok) break;
     }
 
-    if (debug) print_test("Prueba abb almacenar muchos elementos", ok);
-    if (debug) print_test("Prueba abb la cantidad de elementos es correcta", abb_cantidad(abb) == largo);
+    print_test("Prueba abb almacenar muchos elementos", ok);
+    print_test("Prueba abb la cantidad de elementos es correcta", abb_cantidad(abb) == tam);
 
     /* Verifica que devuelva los valores correctos */
-    for (size_t i = 0; i < largo; i++) {
+    for (int i = 0; i < tam; i++) {
         ok = abb_pertenece(abb, claves[i]);
         if (!ok) break;
-        ok = abb_obtener(abb, claves[i]) == valores[i];
+        ok = abb_obtener(abb, claves[i]) == &valores[i];
         if (!ok) break;
     }
 
-    if (debug) print_test("Prueba abb pertenece y obtener muchos elementos", ok);
-    if (debug) print_test("Prueba abb la cantidad de elementos es correcta", abb_cantidad(abb) == largo);
+    print_test("Prueba abb pertenece y obtener muchos elementos", ok);
+    print_test("Prueba abb la cantidad de elementos es correcta", abb_cantidad(abb) == tam);
 
     /* Verifica que borre y devuelva los valores correctos */
-    for (size_t i = 0; i < largo; i++) {
-        ok = abb_borrar(abb, claves[i]) == valores[i];
+    for (int i = 0; i < tam; i++) {
+        ok = abb_borrar(abb, claves[i]) == &valores[i];
         if (!ok) break;
     }
 
-    if (debug) print_test("Prueba abb borrar muchos elementos", ok);
-    if (debug) print_test("Prueba abb la cantidad de elementos es 0", abb_cantidad(abb) == 0);
+    print_test("Prueba abb borrar muchos elementos", ok);
+    print_test("Prueba abb la cantidad de elementos es 0", abb_cantidad(abb) == 0);
 
-    /* Destruye el abb y crea uno nuevo que sí libera */
+	for (int i = 0; i < tam; ++i) {
+		free(claves[i]);
+	}
+
     abb_destruir(abb);
-    abb = abb_crear(strcmp, free);
-
-    /* Inserta 'largo' parejas en el abb */
-    ok = true;
-    for (size_t i = 0; i < largo; i++) {
-        ok = abb_guardar(abb, claves[i], valores[i]);
-        if (!ok) break;
-    }
-
-    free(claves);
-
-    /* Destruye el abb - debería liberar los enteros */
-    abb_destruir(abb);
-
 }
 
 static int buscar(const char* clave, char* claves[], size_t largo)
@@ -327,67 +343,48 @@ static void prueba_abb_iterar()
     abb_destruir(abb);
 }
 
-static void prueba_abb_iterar_volumen(size_t largo)
-{
-    abb_t* abb = abb_crear(strcmp, NULL);
+static void prueba_abb_iterar_inorder_es_ordenado() {
+	abb_t* abb = abb_crear(strcmp, NULL);
 
-    const size_t largo_clave = 10;
-    char (*claves)[largo_clave] = malloc(largo * largo_clave);
+	const int tam = 10;
+	typedef struct pair {
+		int dato;
+		char* clave;
+	} pair_t;
 
-    size_t valores[largo];
+	int expected[] = { 0,1,11,2,3,5,6,7,8,9 };
+	pair_t pairs[] = {
+		{5, "5"},
+		{9, "9"},
+		{8, "8"},
+		{3, "3"},
+		{1, "1"},
+		{6, "6"},
+		{7, "7"},
+		{2, "2"},
+		{0, "0"},
+		{11, "11"},
+	};
 
-    /* Inserta 'largo' parejas en el abb */
-    bool ok = true;
-    for (unsigned i = 0; i < largo; i++) {
-        sprintf(claves[i], "%08d", i);
-        valores[i] = i;
-        ok = abb_guardar(abb, claves[i], &valores[i]);
-        if (!ok) break;
-    }
+	for (int i = 0; i < tam; ++i) {
+		abb_guardar(abb, pairs[i].clave, &pairs[i].dato);
+	}
 
-    // Prueba de iteración sobre las claves almacenadas.
-    abb_iter_t* iter = abb_iter_in_crear(abb);
-    print_test("Prueba abb iterador esta al final, es false", !abb_iter_in_al_final(iter));
+	abb_iter_t* iter = abb_iter_in_crear(abb);
+	bool todo_ok = true;
+	int i = 0;
+	while (!abb_iter_in_al_final(iter)) {
+		const char* clave = abb_iter_in_ver_actual(iter);
+		todo_ok &= (*((int*)abb_obtener(abb, clave))) == expected[i];
+		abb_iter_in_avanzar(iter);
+		i++;
+	}
 
-    ok = true;
-    unsigned i;
-    const char *clave;
-    size_t *valor;
+	print_test("Prueba abb itero los elementos en el orden correcto", todo_ok);
+	print_test("Prueba abb itero todo", i == tam);
 
-    for (i = 0; i < largo; i++) {
-        if ( abb_iter_in_al_final(iter) ) {
-            ok = false;
-            break;
-        }
-        clave = abb_iter_in_ver_actual(iter);
-        if ( clave == NULL ) {
-            ok = false;
-            break;
-        }
-        valor = abb_obtener(abb, clave);
-        if ( valor == NULL ) {
-            ok = false;
-            break;
-        }
-        *valor = largo;
-        abb_iter_in_avanzar(iter);
-    }
-    print_test("Prueba abb iteración en volumen", ok);
-    print_test("Prueba abb iteración en volumen, recorrio todo el largo", i == largo);
-    print_test("Prueba abb iterador esta al final, es true", abb_iter_in_al_final(iter));
-
-    ok = true;
-    for (i = 0; i < largo; i++) {
-        if ( valores[i] != largo ) {
-            ok = false;
-            break;
-        }
-    }
-    print_test("Prueba abb iteración en volumen, se cambiaron todo los elementos", ok);
-
-    free(claves);
-    abb_iter_in_destruir(iter);
-    abb_destruir(abb);
+	abb_iter_in_destruir(iter);
+	abb_destruir(abb);
 }
 
 /* ******************************************************************
@@ -405,11 +402,7 @@ void pruebas_abb_alumno() {
     prueba_abb_borrar();
     prueba_abb_clave_vacia();
     prueba_abb_valor_null();
-}
-
-void pruebas_volumen(){
-    //arreglar pruebas de volumen para que sea random
-    prueba_abb_volumen(5000, true);
-    prueba_abb_iterar();
-    prueba_abb_iterar_volumen(5000);
+	prueba_abb_volumen();
+	prueba_abb_iterar_inorder_es_ordenado();
+	prueba_abb_iterar();
 }

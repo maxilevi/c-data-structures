@@ -40,7 +40,8 @@ abb_nodo_t* crear_nodo(const char* clave, void* dato) {
 void eliminar_nodo(abb_t* abb, abb_nodo_t* nodo, bool borrar_dato) {
 	if (abb->destructor && borrar_dato)
 		abb->destructor(nodo->value);
-	free(nodo);
+	free(nodo->key);
+    free(nodo);
 }
 
 /* Funcion auxiliar para destruir un nodo */
@@ -83,7 +84,7 @@ bool es_hoja(abb_nodo_t* nodo) {
 
 /* Devuelve un bool que representa si el nodo tiene 1 hijo */
 bool es_nodo_con_hijo(abb_nodo_t* nodo) {
-	return nodo->left != NULL || nodo->right != NULL;
+	return (nodo->left != NULL) != (nodo->right != NULL);
 }
 
 /* Busca iterativamente al nodo padre del nodo que contiene la clave */
@@ -127,17 +128,20 @@ abb_nodo_t* buscar_minimo(abb_nodo_t* padre) {
 	return minimo == NULL ? padre : minimo;
 }
 
-/* Hace un swap de un nodo con 2 hijos por su sucesor en el inorder */
-void swap_nodo_con_hijos(abb_nodo_t* nodo) {
-	void* valor = nodo->value;
-	void* clave = nodo->key;
-
+/* Elimina un nodo con 2 hijos */
+void* eliminar_nodo_dos_hijos(abb_t* abb, const char* clave, abb_nodo_t* nodo) {
+	/* Primero buscamos al reemplazante, el mas izquierdo de los derechos */
 	abb_nodo_t* reemplazante = buscar_minimo(nodo->right);
-	/* Hacemos un swap de los nodos */
-	nodo->key = reemplazante->key;
-	nodo->value = reemplazante->value;
-	reemplazante->key = clave;
-	reemplazante->value = valor;
+	void* reemplazante_valor = reemplazante->value;
+	char* reemplazante_clave = strdup(reemplazante->key);
+	/* Le "setiamos" el valor del nodo a borrar al reemplazante y lo borramos */
+	reemplazante->value = nodo->value;
+	void* resultado = abb_borrar(abb, reemplazante->key);
+	/* Ahora "recreamos" al reemplazante en el nodo original */
+    free(nodo->key);
+	nodo->value = reemplazante_valor;
+	nodo->key = reemplazante_clave;
+	return resultado;
 }
 
 /* Primitivas */
@@ -178,8 +182,7 @@ void* abb_borrar(abb_t *arbol, const char *clave) {
 	}
 	/* Caso 3 */
 	else {
-		swap_nodo_con_hijos(nodo);
-		return abb_borrar(arbol, clave);
+		return eliminar_nodo_dos_hijos(arbol, clave, nodo);
 	}
 	eliminar_nodo(arbol, nodo, false);
 	arbol->cantidad--;
@@ -208,6 +211,7 @@ void abb_destruir(abb_t *arbol) {
 
 struct abb_iter {
     pila_t* pila;
+	abb_nodo_t* root;
 };
 
 abb_iter_t *abb_iter_in_crear(const abb_t *arbol) {
@@ -218,19 +222,29 @@ abb_iter_t *abb_iter_in_crear(const abb_t *arbol) {
         free(iter);
         return NULL;
     }
+	iter->root = arbol->root;
+	abb_iter_in_avanzar(iter);
     return iter;
 }
 
 bool abb_iter_in_avanzar(abb_iter_t *iter) {
-    return false;
+	if (!abb_iter_in_al_final(iter)) {
+		if (!iter->root) iter->root = ((abb_nodo_t*)pila_desapilar(iter->pila))->right;
+		while (iter->root) {
+			pila_apilar(iter->pila, iter->root);
+			iter->root = iter->root->left;
+		}
+		return true;
+	}
+	return false;
 }
 
 const char *abb_iter_in_ver_actual(const abb_iter_t *iter) {
-    return pila_ver_tope(iter->pila);
+    return abb_iter_in_al_final(iter) ? NULL : ((abb_nodo_t*)pila_ver_tope(iter->pila))->key;
 }
 
 bool abb_iter_in_al_final(const abb_iter_t *iter) {
-    return pila_esta_vacia(iter->pila);
+    return pila_esta_vacia(iter->pila) && iter->root == NULL;
 }
 
 void abb_iter_in_destruir(abb_iter_t* iter) {
