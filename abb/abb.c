@@ -36,6 +36,7 @@ abb_nodo_t* crear_nodo(const char* clave, void* dato) {
     return nodo;
 }
 
+/* Elimina y destruye el valor de un nodo si es necesario */
 void eliminar_nodo(abb_t* abb, abb_nodo_t* nodo, bool borrar_dato) {
 	if (abb->destructor && borrar_dato)
 		abb->destructor(nodo->value);
@@ -47,6 +48,7 @@ void destruir_nodo(abb_t* abb, abb_nodo_t* nodo) {
 	eliminar_nodo(abb, nodo, true);
 }
 
+/* Itera por todos los nodos en post order, principalmente se usa para destruir el arbol */
 void iterar_post_order(abb_t* abb, abb_nodo_t* nodo, abb_traversal_t funcion) {
     if(!nodo) return;
     iterar_post_order(abb, nodo->left, funcion);
@@ -101,7 +103,7 @@ abb_nodo_t* buscar_recursivo(const char* clave, abb_nodo_t* nodo, abb_comparar_c
     if(!nodo) return NULL;
     int result = cmp(clave, nodo->key);
     if (result == 0) return nodo;
-    else if(result < 0) buscar_recursivo(clave, nodo->left, cmp);
+    else if(result < 0) return buscar_recursivo(clave, nodo->left, cmp);
     return buscar_recursivo(clave, nodo->right, cmp);
 }
 
