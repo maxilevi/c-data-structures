@@ -36,11 +36,15 @@ abb_nodo_t* crear_nodo(const char* clave, void* dato) {
     return nodo;
 }
 
+void eliminar_nodo(abb_t* abb, abb_nodo_t* nodo, bool borrar_dato) {
+	if (abb->destructor && borrar_dato)
+		abb->destructor(nodo->value);
+	free(nodo);
+}
+
 /* Funcion auxiliar para destruir un nodo */
 void destruir_nodo(abb_t* abb, abb_nodo_t* nodo) {
-    if(abb->destructor)
-        abb->destructor(nodo->value);
-    free(nodo);
+	eliminar_nodo(abb, nodo, true);
 }
 
 void iterar_post_order(abb_t* abb, abb_nodo_t* nodo, abb_traversal_t funcion) {
@@ -70,6 +74,28 @@ void insertar_nuevo(abb_nodo_t** root, abb_nodo_t* nodo, abb_comparar_clave_t cm
     }
 }
 
+/* Devuelve un bool que representa si el nodo es una hoja */
+bool es_hoja(abb_nodo_t* nodo) {
+	return nodo->left == NULL && nodo->right == NULL;
+}
+
+/* Devuelve un bool que representa si el nodo tiene 1 hijo */
+bool es_nodo_con_hijo(abb_nodo_t* nodo) {
+	return nodo->left != NULL || nodo->right != NULL;
+}
+
+/* Busca iterativamente al nodo padre del nodo que contiene la clave */
+abb_nodo_t** buscar_puntero_a_nodo_iterativo(abb_t* arbol, const char* clave) {
+	abb_nodo_t** ptr_nodo = &arbol->root;
+	abb_nodo_t* actual = arbol->root;
+	int resultado;
+	while ((resultado = arbol->comparador(clave, actual->key)) != 0) {
+		ptr_nodo = resultado < 0 ? &actual->left : &actual->right;
+		actual = resultado < 0 ? actual->left : actual->right;
+	}
+	return ptr_nodo;
+}
+
 /* Devuelve el nodo en el cual se encuentra el valor o NULL si no existe. Preorder */
 abb_nodo_t* buscar_recursivo(const char* clave, abb_nodo_t* nodo, abb_comparar_clave_t cmp) {
     if(!nodo) return NULL;
@@ -77,6 +103,39 @@ abb_nodo_t* buscar_recursivo(const char* clave, abb_nodo_t* nodo, abb_comparar_c
     if (result == 0) return nodo;
     else if(result < 0) buscar_recursivo(clave, nodo->left, cmp);
     return buscar_recursivo(clave, nodo->right, cmp);
+}
+
+/* Elimina un nodo hoja, borrando las referencias del padre */
+void eliminar_hoja(abb_t* abb, const char* clave) {
+	abb_nodo_t** ptr_nodo = buscar_puntero_a_nodo_iterativo(abb, clave);
+	(*ptr_nodo) = NULL;
+}
+
+/* Elimina un nodo con 1 hijo */
+void eliminar_nodo_con_hijo(abb_t* abb, const char* clave, abb_nodo_t* nodo) {
+	abb_nodo_t* reemplazante = nodo->left ? nodo->left : nodo->right;
+	abb_nodo_t** ptr_nodo = buscar_puntero_a_nodo_iterativo(abb, clave);
+	(*ptr_nodo) = reemplazante;
+}
+
+/* Busca el menor para usar como reemplazante. Lo busca llendo todo a la izquierda recursivamente */
+abb_nodo_t* buscar_minimo(abb_nodo_t* padre) {
+	if (!padre) return NULL;
+	abb_nodo_t* minimo = buscar_minimo(padre->left);
+	return minimo == NULL ? padre : minimo;
+}
+
+/* Hace un swap de un nodo con 2 hijos por su sucesor en el inorder */
+void swap_nodo_con_hijos(abb_nodo_t* nodo) {
+	void* valor = nodo->value;
+	void* clave = nodo->key;
+
+	abb_nodo_t* reemplazante = buscar_minimo(nodo->right);
+	/* Hacemos un swap de los nodos */
+	nodo->key = reemplazante->key;
+	nodo->value = reemplazante->value;
+	reemplazante->key = clave;
+	reemplazante->value = valor;
 }
 
 /* Primitivas */
@@ -102,8 +161,27 @@ bool abb_guardar(abb_t *arbol, const char *clave, void *dato) {
     return true;
 }
 
-void *abb_borrar(abb_t *arbol, const char *clave) {
-    return NULL;
+void* abb_borrar(abb_t *arbol, const char *clave) {
+	abb_nodo_t* nodo = buscar_recursivo(clave, arbol->root, arbol->comparador);
+	if (!nodo) return NULL;
+	void* dato = nodo->value;
+
+	/* Caso 1 */
+	if (es_hoja(nodo)) {
+		eliminar_hoja(arbol, clave);
+	}
+	/* Caso 2*/
+	else if (es_nodo_con_hijo(nodo)) {
+		eliminar_nodo_con_hijo(arbol, clave, nodo);
+	}
+	/* Caso 3 */
+	else {
+		swap_nodo_con_hijos(nodo);
+		return abb_borrar(arbol, clave);
+	}
+	eliminar_nodo(arbol, nodo, false);
+	arbol->cantidad--;
+	return dato;
 }
 
 void *abb_obtener(const abb_t *arbol, const char *clave) {
