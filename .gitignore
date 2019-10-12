@@ -2,3 +2,5 @@
 .zip
 .aux
 .pdf
+.vs/
+.vscode/*
