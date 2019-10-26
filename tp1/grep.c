@@ -6,20 +6,31 @@
 
 void guardar_linea(char** buffer, char* linea, int buffer_length) {
     for(int i = buffer_length-1; i > 0; --i) {
+        if (i == buffer_length-1 && buffer[i]) free(buffer[i]);
         buffer[i] = buffer[i-1];
     }
     buffer[0] = strdup(linea);
 }
 
-void limpiar_buffer(char** buffer, int length) {
+void nulear_buffer(char** buffer, int length, bool primera_vez) {
     for(int i = 0; i < length; ++i) {
+        /* Si es la primera vez que lo limpiamos podemos llegar a estar free'd a cosas no inicializadas que no sean NULL */
+        if(!primera_vez && buffer[i]) free(buffer[i]);
         buffer[i] = NULL;
     }
 }
 
+void limpiar_buffer(char** buffer, int length) {
+    nulear_buffer(buffer, length, false);
+}
+
+void inicializar_buffer(char** buffer, int length) {
+    nulear_buffer(buffer, length, true);
+}
+
 void mostrar_encontrada(char** buffer, int length) {
     for(int i = length-1; i > -1; --i) {
-        if(buffer[i] != NULL)
+        if(buffer[i])
             printf("%s", buffer[i]);
     }
 }
@@ -30,8 +41,8 @@ int mostrar_error(char* msg) {
 }
 
 void destruir_buffer(char** buffer, int length) {
-    for(int i = 0; i < length && buffer[i] != NULL; ++i) {
-        free(buffer[i]);
+    for(int i = 0; i < length; ++i) {
+        if(buffer[i]) free(buffer[i]);
     }
     free(buffer);
 }
@@ -39,11 +50,11 @@ void destruir_buffer(char** buffer, int length) {
 void procesar(FILE* stream, char* aguja, int contexto) {
     int buffer_length = contexto + 1;
     char** buffer = malloc(sizeof(char*) * (buffer_length));
-    limpiar_buffer(buffer, buffer_length);
     if(buffer == NULL) {
         mostrar_error("No se pudo conseguir la memoria necesaria");
         return;
     }
+    inicializar_buffer(buffer, buffer_length);
     char* linea = NULL;
     size_t n = 0;
     while (getline(&linea, &n, stream) != -1) {

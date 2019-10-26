@@ -101,8 +101,12 @@ char* left_trim(char* s)
 
 char* right_trim(char* s)
 {
-	char* back = s + strlen(s);
-	while (isspace(*--back));
+	size_t len = strlen(s);
+	if (len == 0) return s;
+	char* back = s + strlen(s)-1;
+	while (isspace(*back)) {
+		back--;
+	}
 	*(back + 1) = '\0';
 	return s;
 }
@@ -177,20 +181,21 @@ op_result_t potencia(int x, int n, int* result) {
 	return OP_EXITOSA;
 }
 
-int logaritmo_aux(int x, int b) {
-	return x > 1 ? 1 + logaritmo_aux(x / b, b) : 0;
-}
-
 op_result_t logaritmo(int x, int b, int* result) {
-	if (x <= 1 || b < 1) return OP_ERROR;
-	*result = logaritmo_aux(x, b);
+	if (x < 1 || b <= 1) return OP_ERROR;
+	int i = 0, j = 1;
+	while (j <= x) {
+		i++;
+		j *= b;
+	}
+	*result = i-1;
 	return OP_EXITOSA;
 }
 
 op_result_t raiz(int x, int* result) {
 	if (x < 0) return OP_ERROR;
 	int i = 0, j = 0;
-	while (j < x) {
+	while (j <= x) {
 		i++;
 		j = i * i;
 	}
@@ -199,7 +204,7 @@ op_result_t raiz(int x, int* result) {
 }
 
 op_result_t ternaria(int op1, int op2, int op3, int* result) {
-	*result = op1 == 0 ? op2 : op3;
+	*result = (op1 != 0 ? op2 : op3);
 	return OP_EXITOSA;
 }
 
@@ -217,7 +222,7 @@ bool es_operador(char* symbol, entry_operador_t* informacion) {
 
 bool es_numero(char* str) {
 	for (int i = 0; str[i] != '\0'; ++i) {
-		if (str[i] < '0' || str[i] > '9') return false;
+		if ((str[i] < '0' || str[i] > '9') && str[i] != '-' && str[i] != '+') return false;
 	}
 	return true;
 }
@@ -257,9 +262,11 @@ bool guardar_numero(pila_t* pila, int n) {
 	return pila_apilar(pila, ptr);
 }
 
-void limpiar_destruir_pila(pila_t* pila) {
+void limpiar_destruir_pila(pila_t* pila, int* cant_elementos) {
+	*cant_elementos = 0;
 	while (!pila_esta_vacia(pila)) {
 		free((int*)pila_desapilar(pila));
+		(*cant_elementos)++;
 	}
 	pila_destruir(pila);
 }
@@ -272,6 +279,7 @@ op_result_t procesar_linea(char* linea, int* result) {
 
 	for (int i = 0; symbols[i] != NULL; ++i) {
 		char* cleaned_symbol = trim(symbols[i]);
+		if (strcmp(cleaned_symbol, "") == 0) continue;
 		if (es_operador(cleaned_symbol, &entry)) {
 			op_result_t op_result = ejecutar_operacion(entry, pila, result);
 			if (op_result == OP_ERROR) {
@@ -295,8 +303,10 @@ op_result_t procesar_linea(char* linea, int* result) {
 			}
 		}
 	}
-
-	limpiar_destruir_pila(pila);
+	/* Finalmente verificamos que lo unico que haya quedado en la pila sea el result. */
+	int cant_elementos;
+	limpiar_destruir_pila(pila, &cant_elementos);
+	if (cant_elementos != 1) estado = OP_ERROR;
 	free_strv(symbols);
 	return estado;
 }
