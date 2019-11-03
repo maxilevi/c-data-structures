@@ -3,36 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "cola.h"
 
-void guardar_linea(char** buffer, char* linea, int buffer_length) {
-    for(int i = buffer_length-1; i > 0; --i) {
-        if (i == buffer_length-1 && buffer[i]) free(buffer[i]);
-        buffer[i] = buffer[i-1];
+void mostrar_encontrada(cola_t* buffer, int* cantidad) {
+    while(!cola_esta_vacia(buffer)) {
+        char* str = cola_desencolar(buffer);
+        printf("%s", str);
+        /* El string se creo con strdup */
+        free(str);
     }
-    buffer[0] = strdup(linea);
-}
-
-void nulear_buffer(char** buffer, int length, bool primera_vez) {
-    for(int i = 0; i < length; ++i) {
-        /* Si es la primera vez que lo limpiamos podemos llegar a estar free'd a cosas no inicializadas que no sean NULL */
-        if(!primera_vez && buffer[i]) free(buffer[i]);
-        buffer[i] = NULL;
-    }
-}
-
-void limpiar_buffer(char** buffer, int length) {
-    nulear_buffer(buffer, length, false);
-}
-
-void inicializar_buffer(char** buffer, int length) {
-    nulear_buffer(buffer, length, true);
-}
-
-void mostrar_encontrada(char** buffer, int length) {
-    for(int i = length-1; i > -1; --i) {
-        if(buffer[i])
-            printf("%s", buffer[i]);
-    }
+    *cantidad = 0;
 }
 
 int mostrar_error(char* msg) {
@@ -40,31 +20,35 @@ int mostrar_error(char* msg) {
     return -1;
 }
 
-void destruir_buffer(char** buffer, int length) {
-    for(int i = 0; i < length; ++i) {
-        if(buffer[i]) free(buffer[i]);
+bool guardar_linea(cola_t* buffer, char* linea, int* cantidad, int max) {
+    if(max == *cantidad) {
+        void* str = cola_desencolar(buffer);
+        free(str);
+        *cantidad -= 1;
     }
-    free(buffer);
+    *cantidad += 1;
+    return cola_encolar(buffer, strdup(linea));
 }
 
 void procesar(FILE* stream, char* aguja, int contexto) {
-    int buffer_length = contexto + 1;
-    char** buffer = malloc(sizeof(char*) * (buffer_length));
-    if(buffer == NULL) {
+    int cantidad = 0;
+    cola_t* buffer = cola_crear();
+    if (buffer == NULL) {
         mostrar_error("No se pudo conseguir la memoria necesaria");
         return;
     }
-    inicializar_buffer(buffer, buffer_length);
     char* linea = NULL;
     size_t n = 0;
     while (getline(&linea, &n, stream) != -1) {
-        guardar_linea(buffer, linea, buffer_length);
+        if(!guardar_linea(buffer, linea, &cantidad, contexto + 1)) {
+            mostrar_error("No se pudo conseguir la memoria necesaria");
+            break;
+        }
         if (strstr(linea, aguja)) {
-            mostrar_encontrada(buffer, buffer_length);
-            limpiar_buffer(buffer, buffer_length);
+            mostrar_encontrada(buffer, &cantidad);
         }
     }
-    destruir_buffer(buffer, buffer_length);
+    cola_destruir(buffer, free);
     free(linea);
 }
 
