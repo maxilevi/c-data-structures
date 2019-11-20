@@ -29,7 +29,7 @@ typedef void (*abb_traversal_t) (abb_t*, abb_nodo_t*);
 abb_nodo_t* crear_nodo(const char* clave, void* dato) {
     abb_nodo_t* nodo = malloc(sizeof(abb_nodo_t));
     if(!nodo) return NULL;
-    nodo->key = strdup(clave);
+    nodo->key = _strdup(clave);
     nodo->value = dato;
     nodo->left = NULL;
     nodo->right = NULL;
@@ -133,7 +133,7 @@ void* eliminar_nodo_dos_hijos(abb_t* abb, const char* clave, abb_nodo_t* nodo) {
 	/* Primero buscamos al reemplazante, el mas izquierdo de los derechos */
 	abb_nodo_t* reemplazante = buscar_minimo(nodo->right);
 	void* reemplazante_valor = reemplazante->value;
-	char* reemplazante_clave = strdup(reemplazante->key);
+	char* reemplazante_clave = _strdup(reemplazante->key);
 	/* Le "setiamos" el valor del nodo a borrar al reemplazante y lo borramos */
 	reemplazante->value = nodo->value;
 	void* resultado = abb_borrar(abb, reemplazante->key);

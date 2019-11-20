@@ -36,8 +36,8 @@ int main(void) {
     char* linea = NULL;
     size_t n = 0;
 	contexto_ejecucion_t* contexto = crear_contexto();
-	if (!contexto) return;
-    while (getline(&linea, &n, stdin) != -1) {;
+	if (!contexto) return 1;
+    while (getline(&linea, &n, stdin) != -1) {
         if (procesar_linea(linea, contexto))
 			printf("OK\n");
     }
