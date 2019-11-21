@@ -1,0 +1,10 @@
+agregar_archivo ./vuelos-algueiza-parte-01.csv
+agregar_archivo ./vuelos-algueiza-parte-02.csv
+agregar_archivo ./vuelos-algueiza-parte-03.csv
+agregar_archivo ./vuelos-algueiza-parte-04.csv
+agregar_archivo ./vuelos-algueiza-parte-05.csv
+ver_tablero 3 asc 2018-04-08T10:00:00 2018-04-21T00:12:00
+prioridad_vuelos 4
+ver_tablero 3 desc 2018-04-08T10:00:00 2018-04-21T00:12:00
+borrar 2018-04-08T10:00:00 2018-04-21T00:12:00
+ver_tablero 3 desc 2018-04-08T10:00:00 2018-04-21T00:12:00
