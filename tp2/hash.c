@@ -147,7 +147,7 @@ bool reemplazar_dato(const hash_t* hash, bucket_t* bucket, void* dato) {
 bool guardar_dato(hash_t* hash, bucket_t* balde_vacio, const char* clave, void* dato) {
 	balde_vacio->estado = OCUPADO;
 	balde_vacio->dato = dato;
-	balde_vacio->clave = _strdup(clave);
+	balde_vacio->clave = strdup(clave);
 	hash->cantidad++;
 	return true;
 }

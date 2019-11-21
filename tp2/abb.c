@@ -29,7 +29,7 @@ typedef void (*abb_traversal_t) (abb_t*, abb_nodo_t*);
 abb_nodo_t* crear_nodo(const char* clave, void* dato) {
     abb_nodo_t* nodo = malloc(sizeof(abb_nodo_t));
     if(!nodo) return NULL;
-    nodo->key = _strdup(clave);
+    nodo->key = strdup(clave);
     nodo->value = dato;
     nodo->left = NULL;
     nodo->right = NULL;
@@ -133,7 +133,7 @@ void* eliminar_nodo_dos_hijos(abb_t* abb, const char* clave, abb_nodo_t* nodo) {
 	/* Primero buscamos al reemplazante, el mas izquierdo de los derechos */
 	abb_nodo_t* reemplazante = buscar_minimo(nodo->right);
 	void* reemplazante_valor = reemplazante->value;
-	char* reemplazante_clave = _strdup(reemplazante->key);
+	char* reemplazante_clave = strdup(reemplazante->key);
 	/* Le "setiamos" el valor del nodo a borrar al reemplazante y lo borramos */
 	reemplazante->value = nodo->value;
 	void* resultado = abb_borrar(abb, reemplazante->key);
@@ -223,6 +223,28 @@ void abb_in_order_aux(abb_nodo_t *root, bool visitar(const char *, void *, void 
 void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void *extra) {
 	bool seguir_iterando = true;
     abb_in_order_aux(arbol->root, visitar, extra, &seguir_iterando);
+}
+
+/* Iterador de rangos para el TP2 */
+
+void abb_in_order_rangos(abb_nodo_t* root, abb_comparar_clave_t cmp, char* start, char* end, bool visitar(const char*, void*, void*), void* extra, bool* seguir_iterando) {
+	if (!root) return;
+
+	if (cmp(start, root->key) < 0)
+		abb_in_order_rangos(root->left, cmp, start, end, visitar, extra, seguir_iterando);
+
+	if (*seguir_iterando && cmp(start, root->key) <= 0 && cmp(end, root->key) >= 0) {
+		if (!visitar(root->key, root->value, extra))
+			*seguir_iterando = false;
+	}
+
+	if (cmp(end, root->key) > 0)
+		abb_in_order_rangos(root->right, cmp, start, end, visitar, extra, seguir_iterando);
+}
+
+void abb_iterar_rango(abb_t* arbol, char* start, char* end, bool visitar(const char*, void*, void*), void* extra) {
+	bool seguir_iterando = true;
+	abb_in_order_rangos(arbol->root, arbol->comparador, start, end, visitar, extra, &seguir_iterando);
 }
 
 /* Iterador */

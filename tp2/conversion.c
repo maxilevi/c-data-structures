@@ -4,7 +4,7 @@
 #include <string.h>
 
 bool parsear_entero_si_es_valido(char* numero, size_t* n) {
-	return sscanf(numero, "%ld", n) == 1;
+	return sscanf(numero, "%zu", n) == 1;
 }
 
 bool es_entero_valido(char* numero) {

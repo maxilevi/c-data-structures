@@ -6,5 +6,6 @@
 #include "comando.h"
 
 comando_t validar_comando(size_t argc, char** argv);
+void free_comando(comando_t comando);
 
 #endif

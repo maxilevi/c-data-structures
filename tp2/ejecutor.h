@@ -1,6 +1,7 @@
 #ifndef __EJECUTOR_H__
 #define __EJECUTOR_H__
 
+#define _POSIX_C_SOURCE 200809L
 #include <stdlib.h>
 #include "hash.h"
 #include "abb.h"

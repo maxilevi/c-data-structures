@@ -9,7 +9,7 @@ struct pila {
     size_t capacidad;  // Capacidad del arreglo 'datos'.
 };
 
-bool redimensionar(pila_t* pila, size_t capacidad_nueva) {
+static bool redimensionar(pila_t* pila, size_t capacidad_nueva) {
 	void** datos_nuevos = realloc(pila->datos, capacidad_nueva * sizeof(void*));
 	if (datos_nuevos == NULL) return false;
 

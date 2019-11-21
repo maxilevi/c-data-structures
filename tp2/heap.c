@@ -9,7 +9,7 @@ struct heap {
     cmp_func_t cmp;
 };
 
-const size_t CAPACIDAD_INICIAL = 8;
+static const size_t CAPACIDAD_INICIAL = 8;
 
 /* Internas */
 
