@@ -1,1 +1,1 @@
-algueiza: tp2.o hash.o abb.o heap.o strutil.o
+algueiza: tp2.o pila.o validador.o conversion.o ejecutor.o hash.o abb.o heap.o strutil.o

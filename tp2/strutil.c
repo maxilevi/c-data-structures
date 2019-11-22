@@ -2,6 +2,31 @@
 #include "string.h"
 #include "stdlib.h"
 
+#include <string.h>
+#include <ctype.h>
+
+/* Este trio de funciones las use para el TP1, las aÃ±adi aca porque son utiles. */
+
+char* left_trim(char* s) {
+	while (isspace(*s)) s++;
+	return s;
+}
+
+char* right_trim(char* s) {
+	size_t len = strlen(s);
+	if (len == 0) return s;
+	char* back = s + strlen(s)-1;
+	while (isspace(*back)) {
+		back--;
+	}
+	*(back + 1) = '\0';
+	return s;
+}
+
+char* trim(char* s) {
+	return right_trim(left_trim(s));
+}
+
 char* substr(const char* str, size_t n) {
 	char* copia = malloc(sizeof(char) * (n + 1));
 	if (!copia) return NULL;
@@ -70,14 +95,14 @@ char* join(char** strv, char sep) {
 
 	int k = 0;
 	int j = 0;
-	/* Iteramos por todo el string resultante y vamos añadiendo los caracteres uno a uno asi hacemos que el join sea O(N) */
+	/* Iteramos por todo el string resultante y vamos aï¿½adiendo los caracteres uno a uno asi hacemos que el join sea O(N) */
 	for (int i = 0; i < largo-1; ++i) {
 		char siguiente = strv[j][k];
 		if (siguiente == '\0') {
 			j++;
 			k = 0;
 			/* 
-			 * Si el separador es el caracter nulo entonces no hay espacio entre los strings y directamente añadimos el siguiente.
+			 * Si el separador es el caracter nulo entonces no hay espacio entre los strings y directamente aï¿½adimos el siguiente.
 			 * Pero tenemos que checkear de no estar en el ultimo string asi no hacemos un out of bounds 
 			 */
 			if (j < cant_strings && sep == '\0') {

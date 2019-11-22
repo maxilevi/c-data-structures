@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+/* Esta funcion la use para el TP1, la añadi aca porque es bastante util. */
+char* trim(char* string);
+
 /*
  * Devuelve una nueva cadena con los primeros ‘n’ caracteres de la cadena
  * ‘str’. La liberación de la memoria dinámica devuelta queda a cargo de

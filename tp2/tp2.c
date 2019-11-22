@@ -4,33 +4,6 @@
 #include "strutil.h"
 #include <stdio.h>
 #include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-
-/* Auxiliares */
-
-char* left_trim(char* s)
-{
-	while (isspace(*s)) s++;
-	return s;
-}
-
-char* right_trim(char* s)
-{
-	size_t len = strlen(s);
-	if (len == 0) return s;
-	char* back = s + strlen(s)-1;
-	while (isspace(*back)) {
-		back--;
-	}
-	*(back + 1) = '\0';
-	return s;
-}
-
-char* trim(char* s)
-{
-	return right_trim(left_trim(s));
-}
 
 /* Operaciones */
 
@@ -41,7 +14,7 @@ size_t cantidad_simbolos(char** symbols){
 }
 
 void reportar_error(comando_t comando) {
-	fprintf(stderr, "ERROR en comando %s\n", comando.nombre);
+	fprintf(stderr, "Error en comando %s\n", comando.nombre);
 }
 
 void sanitizar_simbolos(char** symbols) {
